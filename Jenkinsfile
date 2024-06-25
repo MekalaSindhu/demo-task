@@ -1,6 +1,6 @@
 pipeline {
   agent any
-  tools {nodejs "node"}
+  tools {nodejs "NodeJS"}
   stages {
 
     stage('Install Dependencies') {
@@ -13,15 +13,15 @@ pipeline {
 		    sh 'npm run build'
       }
     }
-    stage('Copy Build files to Web Server Location') {
-      steps {
-		    sh 'cp -r ./build/* /var/www/html/webserver/'
-      }
+    // stage('Copy Build files to Web Server Location') {
+    //   steps {
+		//     sh 'cp -r ./build/* /var/www/html/webserver/'
+    //   }
+    // }
     }
   post { 
         always { 
             cleanWs()
-        }
-    }
+        } 
   }
 }
