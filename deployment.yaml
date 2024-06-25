@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: materialdash
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: reactapp
+        image: materialdashdemo.azurecr.io/materialdashdemo:88
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: "1"
+          requests:
+            memory: 256Mi
+            cpu: "0.2"
+      imagePullSecrets:
+        - name: myregistrykey
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: md-loadbalancer
+  labels:
+    app: mydeployment
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    name: http
+    targetPort: 80
+  selector:
+    app: nginx
