@@ -15,7 +15,7 @@ pipeline {
     }
     stage('Copy Build files to Web Server Location') {
       steps {
-		    sh 'cp -r ./build/* /var/www/html/'
+		    sh 'cp -r ./build/* /var/www/html/site1'
       }
     }
     }
