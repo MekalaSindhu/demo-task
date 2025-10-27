@@ -149,19 +149,29 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 #####################################################
 # EC2 INSTANCE
 #####################################################
-resource "aws_instance" "react_server" {
-  ami                    = "ami-0c55b159cbfafe1f0" # Amazon Linux 2 (change as per region)
-  instance_type          = var.instance_type
-  subnet_id              = aws_subnet.main_subnet.id
-  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
-  key_name               = var.key_name
-  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
-  user_data              = file("user_data.sh")
+# Get latest Amazon Linux 2 AMI dynamically
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
 
-  tags = {
-    Name = "react-jenkins-sonarqube"
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
   }
 }
+
+resource "aws_instance" "react_server" {
+  ami                    = data.aws_ami.amazon_linux.id
+  instance_type          = "t2.micro"
+  key_name               = "devops_keypair"
+  subnet_id              = aws_subnet.main_subnet.id
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+  user_data              = file("user_data.sh")
+  tags = {
+    Name = "react-server"
+  }
+}
+
 
 #####################################################
 # OUTPUT
