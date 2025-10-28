@@ -2,16 +2,13 @@ pipeline {
     agent any
 
     environment {
-        SONARQUBE = 'MySonarQube' // Jenkins SonarQube name
+        SONARQUBE = 'MySonarQube'
         AWS_REGION = 'us-east-1'
         DOCKER_IMAGE = 'react-app'
     }
 
     stages {
 
-        // ===================================================
-        // Stage 1: Checkout Code (GitHub)
-        // ===================================================
         stage('Checkout Code') {
             steps {
                 echo "🔹 Cloning repository..."
@@ -19,45 +16,57 @@ pipeline {
             }
         }
 
-        // ===================================================
-        // Stage 2: Terraform Init + Apply (Provision Infra)
-        // ===================================================
         stage('Terraform Provisioning') {
             steps {
-                dir('terraform') {
-                    echo "🔹 Initializing Terraform..."
-                    sh 'terraform init'
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-credentials',  // Change to your credential ID
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    dir('terraform') {
+                        echo "🔹 Checking AWS credentials..."
+                        sh '''
+                            echo "AWS_ACCESS_KEY_ID is set: ${AWS_ACCESS_KEY_ID:+YES}"
+                            echo "AWS_SECRET_ACCESS_KEY is set: ${AWS_SECRET_ACCESS_KEY:+YES}"
+                        '''
 
-                    echo "🔹 Validating Terraform..."
-                    sh 'terraform validate'
+                        echo "🔹 Initializing Terraform..."
+                        sh 'terraform init'
 
-                    echo "🔹 Applying Terraform configuration..."
-                    sh 'terraform apply -auto-approve'
+                        echo "🔹 Validating Terraform..."
+                        sh 'terraform validate'
+
+                        echo "🔹 Applying Terraform configuration..."
+                        sh '''
+                            export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
+                            export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"
+                            export AWS_DEFAULT_REGION="${AWS_REGION}"
+                            terraform apply -auto-approve
+                        '''
+                    }
                 }
             }
         }
 
-        // ===================================================
-        // Stage 3: SonarQube Code Analysis
-        // ===================================================
         stage('SonarQube Code Analysis') {
             steps {
                 echo "🔹 Running SonarQube analysis..."
                 withSonarQubeEnv('MySonarQube') {
-                    sh '''
-                        npx sonar-scanner \
-                        -Dsonar.projectKey=react-app \
-                        -Dsonar.sources=src \
-                        -Dsonar.host.url=http://localhost:9000 \
-                        -Dsonar.login=<SONAR_TOKEN>
-                    '''
+                    withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            npx sonar-scanner \
+                            -Dsonar.projectKey=react-app \
+                            -Dsonar.sources=src \
+                            -Dsonar.host.url=http://localhost:9000 \
+                            -Dsonar.login=$SONAR_TOKEN
+                        '''
+                    }
                 }
             }
         }
 
-        // ===================================================
-        // Stage 4: Build React App code
-        // ===================================================
         stage('Build React App') {
             steps {
                 echo "🔹 Building React application..."
@@ -66,9 +75,6 @@ pipeline {
             }
         }
 
-        // ===================================================
-        // Stage 5: Docker Build & Deploy
-        // ===================================================
         stage('Docker Build and Deploy') {
             steps {
                 echo "🔹 Building and Deploying Docker container..."
@@ -91,4 +97,3 @@ pipeline {
         }
     }
 }
-
