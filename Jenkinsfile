@@ -56,7 +56,7 @@ pipeline {
         }
 
         // ===================================================
-        // Stage 4: Build React App
+        // Stage 4: Build React App code
         // ===================================================
         stage('Build React App') {
             steps {
