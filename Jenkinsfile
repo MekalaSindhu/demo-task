@@ -20,7 +20,7 @@ pipeline {
             steps {
                 withCredentials([
                     usernamePassword(
-                        credentialsId: 'aws-credentials',  // Change to your credential ID
+                        credentialsId: 'aws-credentials', // ✅ Matches your Jenkins ID
                         usernameVariable: 'AWS_ACCESS_KEY_ID',
                         passwordVariable: 'AWS_SECRET_ACCESS_KEY'
                     )
@@ -40,8 +40,6 @@ pipeline {
 
                         echo "🔹 Applying Terraform configuration..."
                         sh '''
-                            export AWS_ACCESS_KEY_ID="${aws access key}"
-                            export AWS_SECRET_ACCESS_KEY="${aws-scret-creds}"
                             export AWS_DEFAULT_REGION="${AWS_REGION}"
                             terraform apply -auto-approve
                         '''
@@ -54,7 +52,7 @@ pipeline {
             steps {
                 echo "🔹 Running SonarQube analysis..."
                 withSonarQubeEnv('MySonarQube') {
-                    withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_TOKEN')]) {
+                    withCredentials([string(credentialsId: 'Sonarqube', variable: 'SONAR_TOKEN')]) { // ✅ updated ID
                         sh '''
                             npx sonar-scanner \
                             -Dsonar.projectKey=react-app \
