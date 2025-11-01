@@ -17,39 +17,39 @@ pipeline {
         }
 
         stage('Terraform Provisioning') {
-    steps {
-        withCredentials([[
-            $class: 'AmazonWebServicesCredentialsBinding',
-            credentialsId: 'aws-credentials'
-        ]]) {
-            dir('terraform') {
-                echo "🔹 Checking AWS credentials..."
-                sh '''
-                    echo "AWS_ACCESS_KEY_ID is set: ${AWS_ACCESS_KEY_ID:+YES}"
-                    echo "AWS_SECRET_ACCESS_KEY is set: ${AWS_SECRET_ACCESS_KEY:+YES}"
-                '''
+            steps {
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-key-id', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    dir('terraform') {
+                        echo "🔹 Checking AWS credentials..."
+                        sh '''
+                            echo "AWS_ACCESS_KEY_ID is set: ${AWS_ACCESS_KEY_ID:+YES}"
+                            echo "AWS_SECRET_ACCESS_KEY is set: ${AWS_SECRET_ACCESS_KEY:+YES}"
+                        '''
 
-                echo "🔹 Initializing Terraform..."
-                sh 'terraform init'
+                        echo "🔹 Initializing Terraform..."
+                        sh 'terraform init'
 
-                echo "🔹 Validating Terraform..."
-                sh 'terraform validate'
+                        echo "🔹 Validating Terraform..."
+                        sh 'terraform validate'
 
-                echo "🔹 Applying Terraform configuration..."
-                sh '''
-                    export AWS_DEFAULT_REGION="${AWS_REGION}"
-                    terraform apply -auto-approve
-                '''
+                        echo "🔹 Applying Terraform configuration..."
+                        sh '''
+                            export AWS_DEFAULT_REGION="${AWS_REGION}"
+                            terraform apply -auto-approve
+                        '''
+                    }
+                }
             }
         }
-    }
-}
 
         stage('SonarQube Code Analysis') {
             steps {
                 echo "🔹 Running SonarQube analysis..."
                 withSonarQubeEnv('MySonarQube') {
-                    withCredentials([string(credentialsId: 'Sonarqube', variable: 'SONAR_TOKEN')]) { // ✅ updated ID
+                    withCredentials([string(credentialsId: 'Sonarqube', variable: 'SONAR_TOKEN')]) {
                         sh '''
                             npx sonar-scanner \
                             -Dsonar.projectKey=react-app \
