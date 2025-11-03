@@ -146,7 +146,7 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role = aws_iam_role.ec2_role.name
 }
 
-/* #####################################################
+#####################################################
 # EC2 INSTANCE
 #####################################################
 # Get latest Amazon Linux 2 AMI dynamically
@@ -172,7 +172,7 @@ resource "aws_instance" "react_server" {
     Name = "react-server"
   }
 }
- */
+
 #####################################################
 # EC2 INSTANCE
 #####################################################
