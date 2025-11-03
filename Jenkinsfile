@@ -24,24 +24,43 @@ pipeline {
                 ]) {
                     dir('terraform') {
                         echo "🔹 Checking AWS credentials..."
-                        sh '''
-                            echo "AWS_ACCESS_KEY_ID is set: ${AWS_ACCESS_KEY_ID:+YES}"
-                            echo "AWS_SECRET_ACCESS_KEY is set: ${AWS_SECRET_ACCESS_KEY:+YES}"
+                        bat '''
+                            echo AWS_ACCESS_KEY_ID is set
+                            echo AWS_SECRET_ACCESS_KEY is set
                         '''
 
                         echo "🔹 Initializing Terraform..."
-                        sh 'terraform init'
+                        bat 'terraform init'
 
                         echo "🔹 Validating Terraform..."
-                        sh 'terraform validate'
+                        bat 'terraform validate'
+
+                        echo "🔹 Planning Terraform configuration..."
+                        bat '''
+                            set AWS_DEFAULT_REGION=%AWS_REGION%
+                            terraform plan -out=tfplan
+                        '''
 
                         echo "🔹 Applying Terraform configuration..."
-                        sh '''
-                            export AWS_DEFAULT_REGION="${AWS_REGION}"
-                            terraform apply -auto-approve
+                        bat '''
+                            set AWS_DEFAULT_REGION=%AWS_REGION%
+                            terraform apply -auto-approve tfplan
+                        '''
+                        
+                        echo "🔹 Capturing Terraform outputs..."
+                        bat '''
+                            terraform output -json > terraform_output.json
+                            type terraform_output.json
                         '''
                     }
                 }
+            }
+        }
+
+        stage('Wait for EC2 Instance') {
+            steps {
+                echo "🔹 Waiting for EC2 instance to be ready..."
+                sleep(time: 120, unit: 'SECONDS')
             }
         }
 
@@ -50,12 +69,12 @@ pipeline {
                 echo "🔹 Running SonarQube analysis..."
                 withSonarQubeEnv('MySonarQube') {
                     withCredentials([string(credentialsId: 'Sonarqube', variable: 'SONAR_TOKEN')]) {
-                        sh '''
-                            npx sonar-scanner \
-                            -Dsonar.projectKey=react-app \
-                            -Dsonar.sources=src \
-                            -Dsonar.host.url=http://localhost:9000 \
-                            -Dsonar.login=$SONAR_TOKEN
+                        bat '''
+                            npx sonar-scanner ^
+                            -Dsonar.projectKey=react-app ^
+                            -Dsonar.sources=src ^
+                            -Dsonar.host.url=http://localhost:9000 ^
+                            -Dsonar.login=%SONAR_TOKEN%
                         '''
                     }
                 }
@@ -65,17 +84,17 @@ pipeline {
         stage('Build React App') {
             steps {
                 echo "🔹 Building React application..."
-                sh 'npm install'
-                sh 'npm run build'
+                bat 'npm install'
+                bat 'npm run build'
             }
         }
 
         stage('Docker Build and Deploy') {
             steps {
                 echo "🔹 Building and Deploying Docker container..."
-                sh '''
-                    docker stop react-app || true
-                    docker rm react-app || true
+                bat '''
+                    docker stop react-app 2>nul || echo Container not running
+                    docker rm react-app 2>nul || echo Container not found
                     docker build -t react-app .
                     docker run -d -p 80:80 --name react-app react-app
                 '''

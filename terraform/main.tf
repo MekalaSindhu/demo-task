@@ -2,7 +2,7 @@
 # PROVIDER
 #####################################################
 provider "aws" {
-  region = "us-west-1"
+  region = "us-east-1"
 }
 
 #####################################################
@@ -205,7 +205,7 @@ resource "aws_instance" "react_server" {
 # OUTPUT
 #####################################################
 output "ec2_public_ip" {
-  description = "Public IP of the EC2 instance"
+  description = "Public IP of the EC2 instance" 
   value       = aws_instance.react_server.public_ip
 }
 
