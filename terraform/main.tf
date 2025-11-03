@@ -2,7 +2,7 @@
 # PROVIDER
 #####################################################
 provider "aws" {
-  region = "us-east-1"
+  region = "us-west-1"
 }
 
 #####################################################
@@ -194,7 +194,6 @@ resource "aws_instance" "react_server" {
   subnet_id              = aws_subnet.main_subnet.id
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
-  associate_public_ip_address = true
   user_data              = file("user_data.sh")
 
   tags = {
